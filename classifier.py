@@ -13,19 +13,19 @@ from sklearn.model_selection import train_test_split
 
 # TODO: go back and try other than GRAY
 
-
 class SVMClassifier(object):
     def __init__(self, model_path=None):
         self.orientation = 8
         self.pixel_per_cell = 8
         self.cell_per_block = 2
         self.orientation = 9
+        self.cspace = 'YUV'
+        self.hog_channel = 'ALL'
 
         if model_path:  # Load existing model if there is
             self.model = joblib.load(model_path)
 
-    @staticmethod
-    def calc_hog_features(img, orientation, pixel_per_cell, cell_per_block, vis=False, feature_vec=True):
+    def get_hog_features(self, img, orientation, pixel_per_cell, cell_per_block, vis=False, feature_vec=True):
         if vis is True:
             hog_features, hog_image = hog(img, orientations=orientation,
                                           pixels_per_cell=(pixel_per_cell, pixel_per_cell),
@@ -38,20 +38,57 @@ class SVMClassifier(object):
                                visualise=False, feature_vector=feature_vec)
             return hog_features
 
-    @staticmethod
-    def get_feature_image(img):
-        return cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+    def get_feature_image(self, img):
+        # Convert to specified channels
+        feature_img = None
+        if self.cspace == 'GRAY':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+        elif self.cspace == 'RGB':
+            feature_img = img
+        elif self.cspace == 'HSV':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_RGB2HSV)
+        elif self.cspace == 'LUV':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_RGB2LUV)
+        elif self.cspace == 'HLS':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_RGB2HLS)
+        elif self.cspace == 'YUV':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_RGB2YUV)
+        elif self.cspace == 'YCrCb':
+            feature_img = cv2.cvtColor(img, cv2.COLOR_RGB2YCrCb)
+        return feature_img
+
+    def get_multi_channel_hog_features(self, feature_img, feature_vec=True, ravel=True):
+        # Select specified channel(s)
+        if self.cspace == 'GRAY':  # Gray only has 1 channel, no need to select
+            hog_features = self.get_hog_features(feature_img, self.orientation, self.pixel_per_cell,
+                                                 self.cell_per_block, vis=False, feature_vec=feature_vec)
+            n_channel = 1
+        else:
+            if self.hog_channel == 'ALL':  # Concatenate all channels together
+                hog_features = []
+                for channel in range(feature_img.shape[2]):
+                    hog_features.append(self.get_hog_features(feature_img[:, :, channel],
+                                                              self.orientation, self.pixel_per_cell,
+                                                              self.cell_per_block,
+                                                              vis=False, feature_vec=feature_vec))
+                if ravel:
+                    hog_features = np.ravel(hog_features)
+                n_channel = 3
+            else:  # Select only one channel
+                hog_features = self.get_hog_features(feature_img[:, :, self.hog_channel], self.orientation,
+                                                     self.pixel_per_cell, self.cell_per_block, vis=False,
+                                                     feature_vec=feature_vec)
+                n_channel = 1
+        return hog_features, n_channel
 
     def extract_features(self, image_files):
         features = []
         for file in image_files:
             img = cv2.imread(file)
             feature_img = self.get_feature_image(img)
-            hog_features = self.calc_hog_features(feature_img, self.orientation,
-                                                  self.pixel_per_cell, self.cell_per_block, vis=False, feature_vec=True)
+            hog_features = self.get_multi_channel_hog_features(feature_img)
             features.append(hog_features)
             print("Extracted HOG features for {}".format(file))
-
         return features
 
     def get_features_for_files_in_folder(self, folder):
@@ -97,9 +134,9 @@ if __name__ == '__main__':
 
     # Check the prediction time for a single sample
     t = time.time()
-    n_predict = 20
-    print('My SVC predicts:\t', svc.predict(X_test[0:n_predict]))
-    print('For these labels:\t', y_test[0:n_predict])
+    n_predict = 10
+    print('My SVC predicts: ', svc.predict(X_test[0:n_predict]))
+    print('For these', n_predict, 'labels: ', y_test[0:n_predict])
     t2 = time.time()
     print(round(t2 - t, 5), 'Seconds to predict', n_predict, 'labels with SVC')
 
