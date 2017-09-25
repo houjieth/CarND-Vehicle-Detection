@@ -13,6 +13,7 @@ from sklearn.model_selection import train_test_split
 
 # TODO: go back and try other than GRAY
 
+
 class SVMClassifier(object):
     def __init__(self, model_path=None):
         self.orientation = 8
@@ -23,7 +24,8 @@ class SVMClassifier(object):
         if model_path:  # Load existing model if there is
             self.model = joblib.load(model_path)
 
-    def calc_hog_features(self, img, orientation, pixel_per_cell, cell_per_block, vis=False, feature_vec=True):
+    @staticmethod
+    def calc_hog_features(img, orientation, pixel_per_cell, cell_per_block, vis=False, feature_vec=True):
         if vis is True:
             hog_features, hog_image = hog(img, orientations=orientation,
                                           pixels_per_cell=(pixel_per_cell, pixel_per_cell),
