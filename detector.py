@@ -11,7 +11,6 @@ class Detector(object):
         self.y_stop = 656
         self.X_scaler = X_scaler
 
-    # Define a single function that can extract features using hog sub-sampling and make predictions
     def find_cars(self, img, scale):
 
         draw_img = np.copy(img)
@@ -73,7 +72,50 @@ class Detector(object):
                     window_size_origin_scale = np.int(window_size * scale)
                     cv2.rectangle(draw_img, (x_left_origin_scale, y_top_origin_scale + self.y_start),
                                   (x_left_origin_scale + window_size_origin_scale,
-                                   y_top_origin_scale + self.y_start + window_size_origin_scale), (0, 0, 255), 6)
+                                   y_top_origin_scale + self.y_start + window_size_origin_scale), (0, 0, 255), 2)
+
+        return draw_img
+
+    def find_cars_2(self, img, window_size):
+        # cv2.imshow('img', img)
+        # cv2.waitKey(0)
+        draw_img = np.copy(img)
+        img = self.classifier.get_feature_image(img)
+        img = img.astype(np.float32)
+        # print(img)
+        # cv2.imshow('img', img / 255)
+        cv2.imshow('img', img)
+        cv2.waitKey(0)
+
+        x_range = img.shape[1]
+        y_range = self.y_stop - self.y_start
+
+        n_x_steps = x_range // window_size
+        n_y_steps = y_range // window_size
+
+        x_step = 0.0
+        while x_step < n_x_steps:
+            y_step = 0.0
+            while y_step < n_y_steps:
+                y_top = int(self.y_start + y_step * window_size)
+                x_left = int(x_step * window_size)
+
+                # # Pick up the sub area from whole HOG result by specifying block index ranges on X and Y
+                sub_img = cv2.resize(img[y_top:y_top + window_size, x_left:x_left + window_size], (64, 64))
+                hog_features = self.classifier.calc_hog_features(sub_img, self.classifier.orientation, self.classifier.pixel_per_cell,
+                                                                 self.classifier.cell_per_block, vis=False)
+                #
+                # # Scale features and make a prediction
+                scaled_features = self.X_scaler.transform(hog_features)
+                prediction = self.classifier.model.predict(scaled_features)
+
+                if prediction == 1:
+                    cv2.rectangle(draw_img, (x_left, y_top),
+                                  (x_left + window_size,
+                                   y_top + window_size), (0, 0, 255), 2)
+
+                y_step += 0.20
+            x_step += 0.20
 
         return draw_img
 
@@ -84,10 +126,33 @@ if __name__ == '__main__':
     X_scaler = saved_data['X_scaler']
     detector = Detector(classifier, X_scaler)
 
-    img = cv2.imread('test_images/test1.jpg')
+    img = cv2.imread('test_images/test2.png')
 
-    out_img = detector.find_cars(img, 2.0)
+    # out_img = detector.find_cars(img, 1.0)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+
+    # out_img = detector.find_cars(img, 1.25)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+    #
+    # out_img = detector.find_cars(img, 1.5)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+    #
+    # out_img = detector.find_cars(img, 1.75)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+    #
+    # out_img = detector.find_cars(img, 2.0)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+    #
+    # out_img = detector.find_cars(img, 2.25)
+    # cv2.imshow('img', out_img)
+    # cv2.waitKey(0)
+
+    out_img = detector.find_cars_2(img, 64)
     cv2.imshow('img', out_img)
     cv2.waitKey(0)
-
 

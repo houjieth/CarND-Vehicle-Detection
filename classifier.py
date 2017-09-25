@@ -97,9 +97,9 @@ if __name__ == '__main__':
 
     # Check the prediction time for a single sample
     t = time.time()
-    n_predict = 10
-    print('My SVC predicts: ', svc.predict(X_test[0:n_predict]))
-    print('For these', n_predict, 'labels: ', y_test[0:n_predict])
+    n_predict = 20
+    print('My SVC predicts:\t', svc.predict(X_test[0:n_predict]))
+    print('For these labels:\t', y_test[0:n_predict])
     t2 = time.time()
     print(round(t2 - t, 5), 'Seconds to predict', n_predict, 'labels with SVC')
 
