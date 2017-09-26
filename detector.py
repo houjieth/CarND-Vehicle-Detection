@@ -102,6 +102,8 @@ class Detector(object):
                     x_left_origin_scale = np.int(x_left * scale)
                     y_top_origin_scale = np.int(y_top * scale)
                     window_size_origin_scale = np.int(window_size * scale)
+                    if x_left_origin_scale < 700:
+                        continue
                     bbox = ((x_left_origin_scale, y_top_origin_scale + self.y_start),
                             (x_left_origin_scale + window_size_origin_scale,
                              y_top_origin_scale + self.y_start + window_size_origin_scale))
@@ -151,14 +153,14 @@ class Detector(object):
         self.y_stop = 700
         self.find_car_windows_fast(img, 3.0)
 
-        if len(self.bboxes) > 10:
-            self.bboxes = self.bboxes[len(self.bboxes) - 10:]
+        if len(self.bboxes) > 15:
+            self.bboxes = self.bboxes[len(self.bboxes) - 15:]
 
         self.heat_map = np.zeros((img.shape[0], img.shape[1]))
         for bbox in self.bboxes:
             self.heat_map[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]] += 1
 
-        self.apply_threshold(self.heat_map, 1 + len(self.bboxes) * 0.4)
+        self.apply_threshold(self.heat_map, 3)
 
         # cv2.imshow('img', self.heat_map)
         # cv2.waitKey(0)

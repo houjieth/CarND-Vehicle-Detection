@@ -15,7 +15,6 @@ from sklearn.model_selection import train_test_split
 
 class SVMClassifier(object):
     def __init__(self, model_path=None):
-        self.orientation = 8
         self.pixel_per_cell = 8
         self.cell_per_block = 2
         self.orientation = 9

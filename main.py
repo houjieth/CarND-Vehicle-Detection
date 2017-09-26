@@ -12,17 +12,17 @@ if __name__ == '__main__':
     X_scaler = saved_data['X_scaler']
     detector = Detector(classifier, X_scaler)
 
-    # img = cv2.imread('debug_images/shot0081.png')
-    # img = detector.find_cars(img)
-    # cv2.imshow('img', img)
-    # cv2.waitKey(0)
+    img = cv2.imread('test_images/test1.jpg')
+    img = detector.find_cars(img)
+    cv2.imshow('img', img)
+    cv2.waitKey(0)
 
-    for file in sorted(os.listdir('debug_images_0')):
-        img = cv2.imread(os.path.join('debug_images_0', file))
-        img = detector.find_cars(img)
-        # cv2.imshow('img', img)
-        # cv2.waitKey(0)
-        cv2.imwrite(os.path.join('debug_output_images_0', file), img)
+    # for file in sorted(os.listdir('debug_images_4')):
+    #     img = cv2.imread(os.path.join('debug_images_4', file))
+    #     img = detector.find_cars(img)
+    #     # cv2.imshow('img', img)
+    #     # cv2.waitKey(0)
+    #     cv2.imwrite(os.path.join('debug_output_images_4', file), img)
 
 
     # video = VideoFileClip('project_video.mp4')
