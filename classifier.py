@@ -11,7 +11,6 @@ from sklearn.svm import LinearSVC
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split
 
-# TODO: go back and try other than GRAY
 
 class SVMClassifier(object):
     def __init__(self, model_path=None):

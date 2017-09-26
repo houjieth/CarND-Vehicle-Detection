@@ -77,8 +77,8 @@ class Detector(object):
         # Compute individual channel HOG features for the entire image
         hog, n_channel = self.classifier.get_multi_channel_hog_features(feature_img, feature_vec=False, ravel=False)  # Use feature_vec=False to keep original shape (such as MxNx7x7x9)
 
-        for x_block in range(n_x_steps):
-            for y_block in range(n_y_steps):
+        for x_block in range(n_x_steps + 1):
+            for y_block in range(n_y_steps + 1):
                 y_pos = y_block * cells_per_step
                 x_pos = x_block * cells_per_step
 
