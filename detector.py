@@ -8,11 +8,9 @@ from scipy.ndimage.measurements import label
 class Detector(object):
     def __init__(self, classifier, X_scaler):
         self.classifier = classifier
-        self.y_start = 400
-        self.y_stop = 656
         self.X_scaler = X_scaler
         self.bboxes = []
-        self.heatmap = None
+        self.heat_map = None
 
     def find_car_windows(self, img, window_size):
         """
@@ -45,14 +43,13 @@ class Detector(object):
                     bbox = ((x_left, y_top), (x_left + window_size, y_top + window_size))
                     self.bboxes.append(bbox)
                     cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255), 2)
-                    self.heatmap[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]] += 1
 
                 y_step += 0.25
             x_step += 0.25
 
         return draw_img
 
-    def find_car_windows_fast(self, img, scale):
+    def find_car_windows_fast(self, img, scale, color=(0, 0, 255)):
         """
         Fast version. Will only need to calculate the HOG for the whole image once
         """
@@ -109,12 +106,12 @@ class Detector(object):
                             (x_left_origin_scale + window_size_origin_scale,
                              y_top_origin_scale + self.y_start + window_size_origin_scale))
                     self.bboxes.append(bbox)
-                    cv2.rectangle(draw_img, bbox[0], bbox[1], (0, 0, 255), 2)
-                    self.heatmap[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]] += 1
+                    cv2.rectangle(draw_img, bbox[0], bbox[1], color, 2)
 
         return draw_img
 
-    def draw_labeled_bboxes(self, img, labels):
+    @staticmethod
+    def draw_labeled_bboxes(img, labels):
         # Iterate through all detected cars
         for car_number in range(1, labels[1] + 1):
             # Find pixels with each car_number label value
@@ -129,23 +126,44 @@ class Detector(object):
         # Return the image
         return img
 
+    @staticmethod
+    def apply_threshold(heat_map, threshold):
+        heat_map[heat_map <= threshold] = 0
+
     def find_cars(self, img):
-        self.bboxes = []
-        self.heatmap = np.zeros_like(img[:, :, 0])
-
+        self.y_start = 400
+        self.y_stop = 470
         self.find_car_windows_fast(img, 1.0)
-        # self.find_car_windows_fast(img, 1.25)
+
+        self.y_start = 400
+        self.y_stop = 500
+        self.find_car_windows_fast(img, 1.25)
+
+        self.y_start = 400
+        self.y_stop = 600
         self.find_car_windows_fast(img, 1.5)
-        # self.find_car_windows_fast(img, 1.75)
+
+        self.y_start = 400
+        self.y_stop = 650
         self.find_car_windows_fast(img, 2.0)
-        # self.find_car_windows_fast(img, 2.25)
 
-        threshold = 3
-        self.heatmap[self.heatmap < threshold] = 0
+        self.y_start = 400
+        self.y_stop = 700
+        self.find_car_windows_fast(img, 3.0)
 
-        self.heatmap = np.clip(self.heatmap, 0, 255)
+        if len(self.bboxes) > 10:
+            self.bboxes = self.bboxes[len(self.bboxes) - 10:]
 
-        labels = label(self.heatmap)
+        self.heat_map = np.zeros((img.shape[0], img.shape[1]))
+        for bbox in self.bboxes:
+            self.heat_map[bbox[0][1]:bbox[1][1], bbox[0][0]:bbox[1][0]] += 1
+
+        self.apply_threshold(self.heat_map, 1 + len(self.bboxes) * 0.4)
+
+        # cv2.imshow('img', self.heat_map)
+        # cv2.waitKey(0)
+
+        labels = label(self.heat_map)
         output_img = self.draw_labeled_bboxes(img, labels)
         # cv2.imshow('img', output_img)
         # cv2.waitKey(0)
